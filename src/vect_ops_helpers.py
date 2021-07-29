@@ -64,5 +64,7 @@ class VectOps():
         # return np.array([v.separate() for v in self.vlist])
 
     def diffs(self): 
-        d = [] 
-        
+        d = []
+
+        return d
+

@@ -2,7 +2,7 @@ import numpy as np
 
 def genlist(n): 
 
-    from .vect import Vector
+    from vect import Vector
     l = np.array([Vector() for i in range(n)])
 
     return l
