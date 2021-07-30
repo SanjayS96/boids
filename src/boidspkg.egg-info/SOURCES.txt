@@ -1,0 +1,9 @@
+MANIFEST.in
+README.md
+setup.py
+src/boidspkg.egg-info/PKG-INFO
+src/boidspkg.egg-info/SOURCES.txt
+src/boidspkg.egg-info/dependency_links.txt
+src/boidspkg.egg-info/requires.txt
+src/boidspkg.egg-info/top_level.txt
+src/resources/__init__.py
