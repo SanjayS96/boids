@@ -1,5 +1,5 @@
 import numpy as np
-
+from helpers import structure_vlist
 def avg_pos(vl,neighbours=None):
     
     avg_pos = np.sum(neighbours['position'], axis=1)
@@ -60,3 +60,38 @@ def neighbours2(vl):
     return np.array(n_list), np.array(v_list)
 
     
+class StructOps: 
+    def __init__(self, vlist): 
+        
+        self.vlist = structure_vlist(vlist)
+        self.neighbours = neighbours(self.vlist)
+
+
+    
+    def avg_pos(self):
+    
+        avg_pos = np.sum(self.neighbours['position'], axis=1)
+        avg_pos = avg_pos / self.neighbours.shape[1]
+        dv = avg_pos - self.vlist['position']
+        mag = np.linalg.norm(dv, axis=1)
+
+        if not mag.any(): 
+            return np.zeros(2)
+        
+        else: 
+            dv /= mag[:,np.newaxis]
+            return dv
+        
+    
+    def alignment(self):
+        vels = np.sum(self.neighbours['velocity'], axis=1) 
+        vels /= self.neighbours.shape[1]
+
+        v_mag = np.linalg.norm(vels, axis=1)
+        
+        if not v_mag.any():
+            return np.zeros(2)
+
+        else:
+            normalized = np.divide(vels,v_mag[:,np.newaxis])
+            return normalized
