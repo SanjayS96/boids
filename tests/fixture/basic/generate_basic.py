@@ -5,7 +5,6 @@ import numpy as np
 
 # existing_arr = exists(r'C:/Users/Sanjay/')
 
-
 '''move arrays to setup.py pkg_resources 
 to ensure test env is isolated''' 
 

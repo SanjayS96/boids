@@ -1,12 +1,12 @@
 
-
-
 def calc_steering_forces():
     import numpy as np
     from vect_ops_helpers import VectOps
     from loader import load
     
     vlist = load()
+    vlist.copy()
+
     vops = VectOps(vlist)
 
     avg = vops.avg_pos()
