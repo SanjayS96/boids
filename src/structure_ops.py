@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def avg_pos(vl,neighbours=None):
     
     avg_pos = np.sum(neighbours['position'], axis=1)

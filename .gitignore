@@ -3,4 +3,8 @@ src/__pycache__/
 tests/__pycache__/
 tests/fixture/__pycache__/__init__.cpython-39.pyc
 *__pycache__
+<<<<<<< HEAD
 .vscode/launch.json
+=======
+.vscode/settings.json
+>>>>>>> 08e5306cdf7d88f9c2f2fd787389e2ec2106c590
