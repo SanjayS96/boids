@@ -11,17 +11,14 @@ answer_array = np.load(answers, allow_pickle=True)
 
 stops = structure_ops.StructOps(vl)
 vlist = structure_vlist(vl)
-n = structure_ops.neighbours(vlist)
-
-s_pos = structure_ops.avg_pos(vlist, n)
 cs_pos = stops.avg_pos()
 cs_align= stops.alignment()
-s_align = structure_ops.alignment(n)
 
 def check():
     assert np.allclose(cs_pos, answer_array[0])
+    print('Position test passed')
     assert np.allclose(cs_align, answer_array[1])
+    print('Alignment test passed')
 
 
-
-
+check()
