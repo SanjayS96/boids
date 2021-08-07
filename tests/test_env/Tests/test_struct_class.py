@@ -10,7 +10,6 @@ answers = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\answer_
 answer_array = np.load(answers, allow_pickle=True)
 
 stops = structure_ops.StructOps(vl)
-vlist = structure_vlist(vl)
 
 def test_position():
     cs_pos = stops.avg_pos()

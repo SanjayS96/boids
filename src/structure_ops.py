@@ -8,8 +8,6 @@ def mask_neighbours(vl, cv):
 def neighbours(vl): 
     n_list = [mask_neighbours(vl,vl[i]) for i in range(vl.size)]
     return np.array(n_list)
-
-
     
 class StructOps: 
     def __init__(self, vlist): 
@@ -46,3 +44,6 @@ class StructOps:
         else:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
+
+    def separate(self): 
+        pass
