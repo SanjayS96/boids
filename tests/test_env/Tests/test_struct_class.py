@@ -14,11 +14,10 @@ vlist = structure_vlist(vl)
 cs_pos = stops.avg_pos()
 cs_align= stops.alignment()
 
-def check():
+def test_check():
     assert np.allclose(cs_pos, answer_array[0])
     print('Position test passed')
     assert np.allclose(cs_align, answer_array[1])
     print('Alignment test passed')
 
 
-check()
