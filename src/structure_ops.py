@@ -45,7 +45,7 @@ class StructOps:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
 
-    def separate(self, desired_sep): 
+    def separate(self, desired_sep=40): 
         pass
         
         ''' original function: 
@@ -58,5 +58,15 @@ class StructOps:
                     
         '''
         
-        diffs = self.vlist['position'] - self.neighbours['position']
+        
+        diffs = np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
+        mags = np.linalg.norm(diffs, axis=1)
+
+
         return diffs
+
+        
+        
+
+
+

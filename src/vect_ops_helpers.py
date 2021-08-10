@@ -70,8 +70,8 @@ class VectOps():
             sub_diffs = [] 
 
             for nearby in v.nearby_vects: 
-                sub_diffs.append(nearby.position-v.position)
+                sub_diffs.append(v.position-nearby.position)
 
             all_diffs.append(sub_diffs)
-        return all_diffs
+        return np.array(all_diffs)
 
