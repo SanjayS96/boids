@@ -45,5 +45,18 @@ class StructOps:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
 
-    def separate(self): 
+    def separate(self, desired_sep): 
         pass
+        
+        ''' original function: 
+        1. get diffs 
+        2. get magnitude
+        3. if magnitude within 0 and desired separation (function parameter)
+            4. normalize diff (diff / diff_mag)
+            5. **divide normalized by mag again  
+                    *scale norm so the closer an obstacle is, the higher the sf
+                    
+        '''
+        
+        diffs = self.vlist['position'] - self.neighbours['position']
+        return diffs

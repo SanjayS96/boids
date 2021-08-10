@@ -19,3 +19,5 @@ def test_alignment():
     cs_align= stops.alignment()
     assert np.allclose(cs_align, answer_array[1])
 
+def test_diffs():
+    pass

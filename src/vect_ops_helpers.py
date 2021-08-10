@@ -64,7 +64,14 @@ class VectOps():
         # return np.array([v.separate() for v in self.vlist])
 
     def diffs(self): 
-        d = []
+        all_diffs = []
 
-        return d
+        for v in self.vlist: 
+            sub_diffs = [] 
+
+            for nearby in v.nearby_vects: 
+                sub_diffs.append(nearby.position-v.position)
+
+            all_diffs.append(sub_diffs)
+        return all_diffs
 
