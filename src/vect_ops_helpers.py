@@ -60,6 +60,7 @@ class VectOps():
         for v in self.vlist:
             separation.append(v.separate(desired_sep))
 
+
         return np.array(separation)
         # return np.array([v.separate() for v in self.vlist])
 
@@ -75,3 +76,18 @@ class VectOps():
             all_diffs.append(sub_diffs)
         return np.array(all_diffs)
 
+
+    def normalized(self):
+        
+        norm_list = [] 
+        
+        for v in self.vlist: 
+            sub_norms = []
+            for nearby in v.nearby_vects: 
+                diff = v.position - nearby.position
+                mag = np.linalg.norm(diff)
+                normal = diff/mag
+                sub_norms.append(normal)
+
+            norm_list.append(sub_norms)
+        return norm_list

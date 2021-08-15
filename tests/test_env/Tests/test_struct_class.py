@@ -30,20 +30,14 @@ def test_mags():
     raise NotImplementedError
 
 def test_separation(): 
-    cs_diffs = stops.separate()
-    diffs = vops.diffs()
-
-    assert np.allclose(cs_diffs, diffs) #position test
-
-    standard_mag = []
-    for d in diffs: 
-        standard_mag.append(np.linalg.norm(d, axis=1))
     
+    # cs_scaled = cs_norm / cs_mag[:,np.newaxis:,np.newaxis]
+    # cs_sep = np.sum(cs_scaled, axis=1)
 
-    cs_mag = np.linalg.norm(cs_diffs, axis=2)
-    assert np.allclose(cs_mag, standard_mag) #magnitude test
-
+    n = stops.separate()
+    standard_sep = vops.sep()
     
-
-
+    print(np.allclose(n, standard_sep))
+    # assert np.allclose(standard_sep, answer_array[2])
+    pass
 test_separation()
