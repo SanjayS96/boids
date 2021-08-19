@@ -6,7 +6,7 @@ import numpy as np
 fn = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\static_vl.npy'
 vl = np.load(fn, allow_pickle=True)
 
-answers = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\answer_array.npy'
+answers = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\answer_array2.npy'
 answer_array = np.load(answers, allow_pickle=True)
 
 
@@ -29,15 +29,65 @@ def test_mags():
 
     raise NotImplementedError
 
+def standard_separation(): 
+    cv = vl[0]
+
+    sep_list = [] 
+    for nearby in cv.nearby_vects: 
+        dv = np.zeros(2)
+        diff = cv.position - nearby.position
+        mag = np.linalg.norm(diff)
+
+        if mag.any(): 
+            norm = diff / mag
+
+            sep = None
+
+def debug_compare(key_string, v_vals, s_vals, assertion = False):
+    v_sort = v_vals[key_string]
+    s_sort = s_vals[key_string][0]
+
+    closeness = np.allclose(v_sort, s_sort)
+
+    if not assertion: 
+        return closeness
+
+    assert closeness
+
 def test_separation(): 
     
+
+    def compare(key_string, output=False):
+        v_sort = vsep_dict[key_string]
+        s_sort = sep[key_string][0]
+
+        closeness = np.allclose(v_sort, s_sort)
+        if output: 
+            print(closeness)
+            print(v_sort, s_sort)
+        
+        else: 
+            return closeness
+
     # cs_scaled = cs_norm / cs_mag[:,np.newaxis:,np.newaxis]
     # cs_sep = np.sum(cs_scaled, axis=1)
+    # n = stops.separate()
 
-    n = stops.separate()
-    standard_sep = vops.sep()
+    des_sep = 500
+    small_vl = vl[:5]
+    vops = VectOps(small_vl)
     
-    print(np.allclose(n, standard_sep))
-    # assert np.allclose(standard_sep, answer_array[2])
-    pass
+    
+    # vops.vlist = [small_vl[0]]
+    vsep = vops.sep(des_sep)
+
+    stops = structure_ops.StructOps(small_vl)
+    sep = stops.separate(des_sep)
+    
+    # compare('totals', True)
+
+    print(np.allclose(sep['totals'], vsep))
+
+    print(sep['diff_mags'])
+    print(vsep)
 test_separation()

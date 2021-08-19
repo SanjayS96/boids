@@ -5,7 +5,7 @@ def generate_answers():
     import structure_ops
     import numpy as np
     
-    file_name = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\answer_array.npy'
+    file_name = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\answer_array2.npy'
     vl = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\static_vl.npy'
 
     vlist = np.load(vl, allow_pickle=True)

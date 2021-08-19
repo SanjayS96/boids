@@ -81,5 +81,73 @@ class Vector():
                         scaled = np.divide(diff, diff_mag)
                         total = np.add(total, scaled)
                         count +=1
-
+            
+            if count > 0: 
+                total = np.divide(total, count)
+                total_mag = np.linalg.norm(total)    
+                total = np.divide(total, total_mag)
+        
         return total
+    
+    def separate_debug(self, desired_separation = 100): 
+        
+        undivided_total = np.zeros(2)
+        total = np.zeros(2)
+        total_mag = np.zeros(2)
+        normalized_total = np.zeros(2)
+        count = 0 
+
+        
+        diffs = [] 
+        diff_mags = [] 
+        norms = [] 
+        over_mag = [] 
+        scaled_list = [] 
+
+        undivided_totals = [] 
+        totals = [] 
+        total_mags = [] 
+        norm_totals = [] 
+
+        for vect in self.nearby_vects: 
+            if vect != self:
+                diff = np.subtract(self.position, vect.position)
+                diffs.append(diff)
+                diff_mag = np.linalg.norm(diff)
+                diff_mags.append(diff_mag)
+                
+                scaled = np.zeros(2)
+                norm = np.zeros(2)
+                
+                if 0 < diff_mag < desired_separation: 
+                    norm = np.divide(diff, diff_mag) #normalized distance from neighbour
+                    scaled = np.divide(norm, diff_mag)
+                    total = np.add(total, scaled)
+                    count +=1
+
+                norms.append(norm)
+                scaled_list.append(scaled)
+                undivided_totals.append(total.copy())
+                
+
+                if count > 0: 
+                    total = np.divide(total, count)
+                    total_mag = np.linalg.norm(total)    
+                    normalized_total = np.divide(total, total_mag)
+                
+                totals.append(total)
+                total_mags.append(total_mag)
+                norm_totals.append(normalized_total)
+                        # scaled_list.append(scaled)
+        
+        debug_dict = {
+            'diffs': np.array(diffs), 
+            'diff_mags': np.array(diff_mags), 
+            'norms': np.array(norms), 
+            'scaled': np.array(scaled_list),
+            'undiv_totals': np.array(undivided_totals), 
+            'total_mags': np.array(total_mags), 
+            'norm_totals': np.array(norm_totals),
+            'totals': np.array(norm_totals)
+        }
+        return debug_dict

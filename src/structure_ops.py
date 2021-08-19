@@ -58,21 +58,58 @@ class StructOps:
                     
         '''
         
-        
+        total = np.zeros(2) #placeholder
         diffs = np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
-        # mags = np.linalg.norm(diffs, axis=1)
+        
         mags = np.linalg.norm(diffs, axis=2)
-        norm = diffs / mags[:,np.newaxis:,np.newaxis] 
+        mags_mask = ((mags<desired_sep) & (mags > 0))
+        
+        
+        sel_mags = np.where(mags_mask, mags, np.ones(1))
+        sel_diffs = np.where(mags_mask[:,np.newaxis:,np.newaxis], diffs, np.zeros(2))
+        
+        norm = sel_diffs / sel_mags[:,np.newaxis:,np.newaxis]
+        scaled = np.divide(norm,mags[:,np.newaxis:,np.newaxis])
+        
 
-        mask_mags = (mags > desired_sep)
+        total = np.sum(scaled, axis=1)
+        total_count = np.count_nonzero(mags_mask, axis=1)
+        
+        total_count = np.where(total_count!=0, total_count, np.ones(1))
+        
+        '''instead of replacing zeros with ones to avoid zero div error, 
+        should use similar method as normalized total to only divide nonzero vals
 
-        scaled_mags = mags[mask_mags]
-        #scaled_mags = mags[mags > 100]
+        "avg_total = np.divide(total, total_count, out=np.zeros_like(total), where=total_count>0)"
+        not working, due to shape mismatch. probably have to add an axis to total_count '''
+        
+        avg_total = total / total_count[:,np.newaxis]
+        total_mag = np.linalg.norm(total, axis=1)
 
-        scaled_mags = np.where(mags>desired_sep, 1, mags)
+        normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.empty_like(avg_total), where=total_mag[:,np.newaxis]!=0)
 
-        norm = np.divide(norm,scaled_mags[:,np.newaxis:,np.newaxis])
-        return np.sum(norm, axis=1)
+
+        '''vscode unable to follow call stack when debugger invoked from venv.
+        should configure remote debugging on laptop.
+        can use a dict for inspecting values, in the mean time.'''   
+           
+        measures = {
+            'diffs': diffs, 
+            'diff_mags': mags, 
+            'sel_mags': sel_mags,
+            'norms': norm, 
+            'scaled': scaled,
+
+            'undiv_total': total, 
+            'total_count': total_count,
+            'avg_total': avg_total, 
+            'total_mag': total_mag, 
+
+            'totals': normalized_total
+        
+        }
+        
+        return measures
 
         
         

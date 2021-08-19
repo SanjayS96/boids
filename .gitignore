@@ -10,3 +10,4 @@ tests/test_env/Include/
 tests/test_env/Scripts/
 tests/test_env/Lib/
 tests/.vscode/settings.json
+tests/.vscode/launch.json

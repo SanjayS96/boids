@@ -60,9 +60,15 @@ class VectOps():
         for v in self.vlist:
             separation.append(v.separate(desired_sep))
 
-
         return np.array(separation)
-        # return np.array([v.separate() for v in self.vlist])
+
+    def sep_debug(self, desired_sep = 100): 
+        separation = [] 
+
+        v = self.vlist[0]
+        
+        return v.separate_debug(desired_sep)
+
 
     def diffs(self): 
         all_diffs = []
