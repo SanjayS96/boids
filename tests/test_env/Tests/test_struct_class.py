@@ -2,6 +2,7 @@ from helpers import genlist, structure_vlist
 from vect_ops_helpers import VectOps
 import structure_ops
 import numpy as np
+from numpy.testing import assert_allclose
 
 fn = r'C:\Users\Sanjay\code\projects\boids_2.0\tests\test_env\Tests\static_vl.npy'
 vl = np.load(fn, allow_pickle=True)
@@ -57,37 +58,30 @@ def debug_compare(key_string, v_vals, s_vals, assertion = False):
 def test_separation(): 
     
 
-    def compare(key_string, output=False):
-        v_sort = vsep_dict[key_string]
+    def compare(key_string, output=True):
+        v_sort = vsep[key_string]
         s_sort = sep[key_string][0]
 
         closeness = np.allclose(v_sort, s_sort)
         if output: 
             print(closeness)
-            print(v_sort, s_sort)
+            print('vector:\n', v_sort, '\nstruct:\n',s_sort)
         
         else: 
             return closeness
 
-    # cs_scaled = cs_norm / cs_mag[:,np.newaxis:,np.newaxis]
-    # cs_sep = np.sum(cs_scaled, axis=1)
-    # n = stops.separate()
-
-    des_sep = 500
-    small_vl = vl[:5]
-    vops = VectOps(small_vl)
+    des_sep = 200
+    # small_vl = vl[:5]
+    vops = VectOps(vl)
     
     
     # vops.vlist = [small_vl[0]]
     vsep = vops.sep(des_sep)
 
-    stops = structure_ops.StructOps(small_vl)
+    stops = structure_ops.StructOps(vl)
     sep = stops.separate(des_sep)
     
+    assert_allclose(sep, vsep)
+    breakpoint
     # compare('totals', True)
-
-    print(np.allclose(sep['totals'], vsep))
-
-    print(sep['diff_mags'])
-    print(vsep)
-test_separation()
+    

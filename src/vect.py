@@ -40,9 +40,7 @@ class Vector():
         
         tree = spatial.KDTree(positions)
         a, indices= tree.query(self.position, num_neighbours)
-        # print(indices)
         return indices
-        # self.nearby_vects = [self.neighbour_positions[i] for i in indices]
     
     def alignment(self): 
         
@@ -105,6 +103,7 @@ class Vector():
         scaled_list = [] 
 
         undivided_totals = [] 
+        counts = [] 
         totals = [] 
         total_mags = [] 
         norm_totals = [] 
@@ -127,18 +126,17 @@ class Vector():
 
                 norms.append(norm)
                 scaled_list.append(scaled)
-                undivided_totals.append(total.copy())
                 
-
-                if count > 0: 
-                    total = np.divide(total, count)
-                    total_mag = np.linalg.norm(total)    
-                    normalized_total = np.divide(total, total_mag)
+        undivided_totals.append(total.copy())
+        counts.append(count)
+        if count > 0: 
+            total = np.divide(total, count)
+            total_mag = np.linalg.norm(total)    
+            normalized_total = np.divide(total, total_mag)
                 
-                totals.append(total)
-                total_mags.append(total_mag)
-                norm_totals.append(normalized_total)
-                        # scaled_list.append(scaled)
+        totals.append(total)
+        total_mags.append(total_mag)
+        norm_totals.append(normalized_total)
         
         debug_dict = {
             'diffs': np.array(diffs), 
@@ -146,8 +144,9 @@ class Vector():
             'norms': np.array(norms), 
             'scaled': np.array(scaled_list),
             'undiv_totals': np.array(undivided_totals), 
+            'counts': np.array(counts), 
             'total_mags': np.array(total_mags), 
             'norm_totals': np.array(norm_totals),
-            'totals': np.array(norm_totals)
+            'totals': np.array(totals)
         }
         return debug_dict

@@ -45,7 +45,7 @@ class StructOps:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
 
-    def separate(self, desired_sep=100): 
+    def separate(self, desired_sep=40): 
         pass
         
         ''' original function: 
@@ -84,10 +84,11 @@ class StructOps:
         not working, due to shape mismatch. probably have to add an axis to total_count '''
         
         avg_total = total / total_count[:,np.newaxis]
-        total_mag = np.linalg.norm(total, axis=1)
+        total_mag = np.linalg.norm(avg_total, axis=1)
 
-        normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.empty_like(avg_total), where=total_mag[:,np.newaxis]!=0)
+        normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.zeros_like(avg_total), where=total_mag[:,np.newaxis]!=0)
 
+        return normalized_total
 
         '''vscode unable to follow call stack when debugger invoked from venv.
         should configure remote debugging on laptop.
