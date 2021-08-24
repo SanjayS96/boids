@@ -14,7 +14,7 @@ class StructOps:
         
         self.vlist = structure_vlist(vlist)
         self.neighbours = neighbours(self.vlist)
-
+        self.maxspeed = vlist[0].maxspeed
 
     
     def avg_pos(self):
@@ -112,8 +112,22 @@ class StructOps:
         
         return measures
 
-        
-        
+    def steer_to_dv(self, dv, limit=0.2): 
+        maxed = dv * self.maxspeed
+        steer_force = dv - self.vlist['velocity'] 
+
+        sf_mag = np.linalg.norm(steer_force)
+
+        over_lim = np.where(sf_mag > limit, (steer_force / sf_mag) * limit, steer_force)
+
+        self.vlist['velocity'] += over_lim
+
+    def rotate(self): 
+        pass
+
+    def limit_speed(self): 
+        pass
+
 
 
 

@@ -71,17 +71,43 @@ def test_separation():
             return closeness
 
     des_sep = 200
-    # small_vl = vl[:5]
     vops = VectOps(vl)
     
     
-    # vops.vlist = [small_vl[0]]
     vsep = vops.sep(des_sep)
 
     stops = structure_ops.StructOps(vl)
     sep = stops.separate(des_sep)
     
     assert_allclose(sep, vsep)
-    breakpoint
-    # compare('totals', True)
+
+
+'''testing steer_force as sum of all forces'''
+from copy import deepcopy
+vl_copy = deepcopy([v.velocity for v in vl])
+def test_all():
+
+    v_steering = vops.steer()
+
+    assert_allclose(stops.vlist['velocity'], vl_copy)
+
+    #reset vl
+    vl = np.load(fn, allow_pickle=True)
+
+    avg = stops.avg_pos()
+    align = stops.alignment()
+    sep = stops.separate()
+
+    dvs = np.array((avg, align, sep))
     
+    stops.steer_to_dv(avg)
+    # stops.steer_to_dv(align)
+    # stops.steer_to_dv(sep)
+
+    s_steering = stops.vlist['velocity']
+
+    return v_steering, s_steering
+test_all()
+
+breakpoint
+

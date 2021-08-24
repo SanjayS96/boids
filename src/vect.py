@@ -150,3 +150,29 @@ class Vector():
             'totals': np.array(totals)
         }
         return debug_dict
+
+    def steer_to_dv(self, dv, limit=0.2): 
+        dv = np.multiply(dv, self.maxspeed)
+        steer_force = np.subtract(dv, self.velocity)
+        
+        sf_mag = np.linalg.norm(steer_force)
+
+        if sf_mag > limit: 
+
+            steer_force /= sf_mag
+            steer_force *= limit
+
+        self.acc += steer_force
+        self.velocity += self.acc
+        self.acc = np.zeros(2)
+
+    def steer_force(self, dv, limit=0.2): 
+        dv = np.multiply(dv, self.maxspeed)
+        steer_force = np.subtract(dv, self.velocity)
+        
+        sf_mag = np.linalg.norm(steer_force)
+
+        if sf_mag > limit: 
+
+            steer_force /= sf_mag
+            steer_force *= limit

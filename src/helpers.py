@@ -11,10 +11,10 @@ def structure_vlist(vect_list):
     data = [] 
     for vect in vect_list:
 
-        vector = (vect.position.copy(), vect.acc.copy(), vect.velocity.copy())
+        vector = (vect.position.copy(), vect.acc.copy(), vect.velocity.copy(), vect.maxspeed)
         data.append(vector)
     
-    dt = np.dtype([('position', 'f8', (2,)), ('acceleration','f8', (2,)), ('velocity','f8', (2,))])
+    dt = np.dtype([('position', 'f8', (2,)), ('acceleration','f8', (2,)), ('velocity','f8', (2,)), ('maxspeed', 'f8', (1,))])
     vector_list = np.array(data, dtype=dt)
     
     return vector_list
