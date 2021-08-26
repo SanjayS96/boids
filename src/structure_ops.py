@@ -114,13 +114,22 @@ class StructOps:
 
     def steer_to_dv(self, dv, limit=0.2): 
         maxed = dv * self.maxspeed
-        steer_force = dv - self.vlist['velocity'] 
+        steer_force = maxed - self.vlist['velocity'] 
 
-        sf_mag = np.linalg.norm(steer_force)
+        sf_mag = np.linalg.norm(steer_force, axis=1)
+        steer_force = np.where(sf_mag[:,np.newaxis] > np.array(limit), (steer_force / sf_mag[:,np.newaxis]) * limit, steer_force)
 
-        over_lim = np.where(sf_mag > limit, (steer_force / sf_mag) * limit, steer_force)
+        self.vlist['velocity'] += steer_force
 
-        self.vlist['velocity'] += over_lim
+        return self.vlist['velocity']
+    def steer_debug(self, dv, limit=0.2): 
+        maxed = dv * self.maxspeed
+        steer_force = maxed - self.vlist['velocity'] 
+
+        sf_mag = np.linalg.norm(steer_force, axis=1)
+        steer_force = np.where(sf_mag[:,np.newaxis] > np.array(limit), (steer_force / sf_mag[:,np.newaxis]) * limit, steer_force)
+
+        return steer_force
 
     def rotate(self): 
         pass

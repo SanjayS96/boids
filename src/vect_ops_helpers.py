@@ -98,16 +98,22 @@ class VectOps():
             norm_list.append(sub_norms)
         return norm_list
 
-    def steer(self): 
-        steer_force_list = [] 
+    def steer(self, avg): 
 
-        avg_pos = self.avg_pos()
-        alignment = self.align()
-        sep = self.sep()
         for i, v in enumerate(self.vlist):
-             v.steer_to_dv(avg_pos[i])
+             v.steer_to_dv(avg[i])
             #  v.steer_to_dv(alignment[i])
             #  v.steer_to_dv(sep[i])
         
         return np.array([v.velocity for v in self.vlist])
+
+    def steer_debug(self, avg): 
+        steer_force_list = [] 
+
+        for i, v in enumerate(self.vlist):
+            steer_force_list.append(v.steer_force(avg[i]))
+            #  v.steer_to_dv(alignment[i])
+            #  v.steer_to_dv(sep[i])
+        
+        return steer_force_list
 

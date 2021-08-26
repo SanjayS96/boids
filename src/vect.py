@@ -176,3 +176,5 @@ class Vector():
 
             steer_force /= sf_mag
             steer_force *= limit
+        return steer_force
+        
