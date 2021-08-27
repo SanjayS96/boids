@@ -112,6 +112,96 @@ class StructOps:
         
         return measures
 
+    def separate_bench_dict(self, desired_sep=40): 
+        
+        '''
+        possible improvements:
+            1. replace np.linalg.norm:
+                -np.sqrt(m.dot(m))   
+                -np.sqrt(m*m))
+                -np.sqrt(np.einsum('i,i', a, a))
+                -np.sqrt(inner1d(V,V))
+
+            2. use mag^2 for mags mask against desired_sep^2
+        '''
+
+        import time
+
+        timings = {}
+
+        total = np.zeros(2) #placeholder
+        
+        start_time=time.perf_counter()
+        
+        diffs = np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
+        
+        last_time = time.perf_counter() 
+        timings['diffs'] = last_time - start_time  
+
+        last_time = time.perf_counter() 
+        mags = np.linalg.norm(diffs, axis=2)
+        timings['mags'] = time.perf_counter() - last_time
+        # timings['mags_perf'] = time.perf_counter()
+
+        last_time = time.perf_counter()
+        mags_mask = ((mags<desired_sep) & (mags > 0))
+        timings['mags_mask'] = time.perf_counter() - last_time
+        
+        
+        last_time = time.perf_counter()
+        sel_mags = np.where(mags_mask, mags, np.ones(1))
+        timings['sel_mags'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        sel_diffs = np.where(mags_mask[:,np.newaxis:,np.newaxis], diffs, np.zeros(2))
+        timings['sel_diffs'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        norm = sel_diffs / sel_mags[:,np.newaxis:,np.newaxis]
+        timings['norms'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        scaled = np.divide(norm,mags[:,np.newaxis:,np.newaxis])
+        timings['scaled'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total = np.sum(scaled, axis=1)
+        timings['sum_scaled'] = time.perf_counter() - last_time
+
+        last_time = time.perf_counter()
+        total_count = np.count_nonzero(mags_mask, axis=1)
+        last_time = time.perf_counter()
+        timings['count_nonzero'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total_count = np.where(total_count!=0, total_count, np.ones(1))
+        timings['total_count'] = time.perf_counter() - last_time
+        
+        '''instead of replacing zeros with ones to avoid zero div error, 
+        should use similar method as normalized total to only divide nonzero vals
+
+        "avg_total = np.divide(total, total_count, out=np.zeros_like(total), where=total_count>0)"
+        not working, due to shape mismatch. probably have to add an axis to total_count '''
+        
+        last_time = time.perf_counter()
+        avg_total = total / total_count[:,np.newaxis]
+        timings['avg_total'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total_mag = np.linalg.norm(avg_total, axis=1)
+        timings['total_mag'] = time.perf_counter() - last_time
+
+        last_time = time.perf_counter()
+        normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.zeros_like(avg_total), where=total_mag[:,np.newaxis]!=0)
+        timings['normalized'] = time.perf_counter() - last_time
+
+        timings['total'] = time.perf_counter()- start_time
+
+        return timings
+        return normalized_total
+
+    def faster_separate(self, desired_sep=40): 
+        pass
     def steer_to_dv(self, dv, limit=0.2): 
         maxed = dv * self.maxspeed
         steer_force = maxed - self.vlist['velocity'] 
