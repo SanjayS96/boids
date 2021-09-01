@@ -11,3 +11,5 @@ tests/test_env/Scripts/
 tests/test_env/Lib/
 tests/.vscode/settings.json
 tests/.vscode/launch.json
+tests/test_env/tests/benchmarking/struct_vlist_1000.npy
+tests/test_env/tests/benchmarking/vlist_1000.npy

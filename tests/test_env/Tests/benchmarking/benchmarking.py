@@ -7,16 +7,29 @@ from timeit import timeit
 import cProfile, pstats, io
 from pstats import SortKey
 import time
-
+np.set_printoptions(suppress=True)
 def benchmark(func): 
     def wrapper(*args): 
         t1 = time.perf_counter()
         ret = func(*args)
         t2 = time.perf_counter() 
-        print(f'{func.__name__} | {round(t2-t1, 5)}s')
+        # print(f'{func.__name__} | {round(t2-t1, 5)}s')
+        print(f'{func.__name__} | {np.array([t2-t1])}s')
         return ret 
     
     return wrapper
+
+def benchmark_timer(func): 
+    def wrapper(*args): 
+        t1 = time.perf_counter()
+        ret = func(*args)
+        t2 = time.perf_counter() 
+        
+        return ret, t2-t1
+    
+    return wrapper
+
+
 # pr = cProfile.Profile()
 
 def vops_initialize(): 
@@ -125,6 +138,48 @@ def main_bench():
     stops_bench(vl)
 
 
+def generate(size):
+    vl = genlist(size)
+    name = f'tests\\test_env\\tests\\benchmarking\\vlist_{str(size)}'
+    
+    np.save(name, vl, allow_pickle=True) 
+
+def cached_stops(size):
+    '''returns StructOps instance with predefined structured 
+    vlist'''
+    
+    try: 
+        path=f'tests\\test_env\\tests\\benchmarking\\'
+        name = f'{path}vlist_{str(size)}.npy'
+        vl = np.load(name, allow_pickle=True)
+    
+        stops = structure_ops.StructOps(vl)
+
+        struct_vl = stops.vlist
+        struct_neighbours = stops.neighbours
+        np.save(f'{path}struct_vlist_{str(size)}.npy', struct_vl, allow_pickle=True)
+        np.save(f'{path}struct_neighbours{str(size)}.npy', struct_vl, allow_pickle=True)
+
+    except FileNotFoundError:
+        print('File not found')
+    # vlist = 
+    # np.save()
+
+
+def predef_stops(): 
+    vl = genlist(1)
+
+    stops = structure_ops.StructOps(vl)
+    
+    path=f'tests\\test_env\\tests\\benchmarking\\'
+    vlist = f'{path}struct_vlist_1000.npy'
+    neighbours = f'{path}struct_vlist_1000.npy'
+    stops.vlist = np.load(vlist, allow_pickle=True)
+    stops.neighbours = np.load(neighbours, allow_pickle=True)
+
+    return stops
+
+
 def bench_sep(): 
 
     
@@ -137,9 +192,9 @@ def bench_sep():
     @benchmark
     def _structure(vl): 
         return structure_ops.StructOps(vl)
-    vl= _genlist()
-
-    s = _structure(vl)
+    @benchmark
+    def _predef_structure():
+        return predef_stops()
 
     '''
     initializing structops is slow. 
@@ -164,28 +219,92 @@ def bench_sep():
         return s.faster_separate()
 
     import pprint
-    pp = pprint.PrettyPrinter(indent=4)
 
-    st = time.perf_counter()
-    sep =s.separate_bench_dict()
+    s = predef_stops()
+    sep = s.separate_bench_dict()
+
+    def compare_mag():
+        
+        from numpy.core.umath_tests import inner1d
+        diffs= s.faster_separate()
+        @benchmark
+        def mag1(): 
+            return np.linalg.norm(diffs, axis=2)
+
+        @benchmark
+        def mag2():
+            return np.sqrt(inner1d(diffs,diffs))
+
+        @benchmark
+        def mag3():
+            # print(diffs.ndim)
+
+            # v = np.array([300,500])
+            # diffs = np.array([v for _ in range(10)])
+
+            # print(diffs.ndim)
+            # mag = np.linalg.norm(diffs, axis=1)
+            einsum = np.einsum('ijk,ijk->ik', diffs, diffs)
+            return einsum
+            # print(mag,'\n', einsum)
+        m1 = mag1()
+        m2 = mag2()
+        m3 = mag3()
+        
+        print(m1[0][1])
+        # print(m3[0])
+        print(m3)
+        # assert_allclose(m1,m3)
     
+    def mag_methods():
+        
+        vector = np.array([222.0, 194.0])
 
+        @benchmark
+        def _lin():
+            return np.linalg.norm(vector)
+        @benchmark
+        def _dot():
+            return np.sqrt(np.dot(vector, vector))
+        
+        @benchmark
+        def _sum():
+            return np.sqrt((vector*vector).sum(axis=0))
+
+        @benchmark
+        def _ein():
+            return np.sqrt(np.einsum('i,i', vector, vector))
+
+        @benchmark
+        def _inn():
+            return np.sqrt(np.inner(vector, vector))
+        # fs = s.faster_separate()
+
+            
+        l = _lin()
+        d = _dot()
+        s = _sum()
+        i = _inn()
+        
+        [assert_allclose(l,m) for m in [d,s,i]]
+        
     
-    keys = sep.keys()
-    vals = list(sep.values())
-    longest=max([len(str(k)) for k in keys])
     
-    sep = dict(sorted(sep.items(), key=lambda item: item[1]))
+    def dict_print():
+        
+        pp = pprint.PrettyPrinter(indent=4)
+        keys = sep.keys()
+        vals = list(sep.values())
+        longest=max([len(str(k)) for k in keys])
+        sorted_sep = dict(sorted(sep.items(), key=lambda item: item[1]))
+        
+        for i,v in sep.items():
+            print(i.ljust(longest,' '),': ',str(round(v,5)).ljust(5, ' '))
 
-    for i,v in sep.items():
-        print(i.ljust(longest,' '),': ',str(round(v,5)).ljust(5, ' '))
+        sumtime = sum(list(sep.values())[:-1]) ##verify dict perfcounters by summing all
 
-    sumtime = sum(list(sep.values())[:-1])
-    print(time.perf_counter() - st)
-
-    np_vals = np.array(vals)
-    
-
+    dict_print()
+bench_sep()
 def profile_sep():
     pr = cProfile.Profile()
     pr.enable()
@@ -201,8 +320,6 @@ def profile_sep():
     ps.strip_dirs().print_stats()
 
 
-t = time.time()
-bench_sep()
-print(time.time() - t)
+
 '''separation function is slowest in all cases'''
 '''calculate algorithm scaling performance'''

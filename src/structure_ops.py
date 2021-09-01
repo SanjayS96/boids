@@ -1,5 +1,6 @@
 import numpy as np
 from helpers import structure_vlist
+from scipy.spatial import KDTree
 
 def mask_neighbours(vl, cv):
     mask = (vl != cv)
@@ -16,13 +17,21 @@ class StructOps:
         self.neighbours = neighbours(self.vlist)
         self.maxspeed = vlist[0].maxspeed
 
+    def mag(self, dv, axis): 
+        return np.linalg.norm(dv, axis=axis)
+
+    def alt_mag(self, dv):
+        return np.sqrt(np.einsum('ijk,ijk->ij', dv, dv))
     
+    def alt_mag_axis1(self, dv):
+        return np.sqrt(np.einsum('ij,ij->i', dv, dv))
+
     def avg_pos(self):
     
         avg_pos = np.sum(self.neighbours['position'], axis=1)
         avg_pos = avg_pos / self.neighbours.shape[1]
         dv = avg_pos - self.vlist['position']
-        mag = np.linalg.norm(dv, axis=1)
+        mag = self.mag(dv, axis=1)
 
         if not mag.any(): 
             return np.zeros(2)
@@ -36,7 +45,7 @@ class StructOps:
         vels = np.sum(self.neighbours['velocity'], axis=1) 
         vels /= self.neighbours.shape[1]
 
-        v_mag = np.linalg.norm(vels, axis=1)
+        v_mag = self.mag(vels, axis=1)
         
         if not v_mag.any():
             return np.zeros(2)
@@ -45,7 +54,7 @@ class StructOps:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
 
-    def separate(self, desired_sep=40): 
+    def separate(self, desired_sep=40, debug=False): 
         pass
         
         ''' original function: 
@@ -69,7 +78,7 @@ class StructOps:
         sel_diffs = np.where(mags_mask[:,np.newaxis:,np.newaxis], diffs, np.zeros(2))
         
         norm = sel_diffs / sel_mags[:,np.newaxis:,np.newaxis]
-        scaled = np.divide(norm,mags[:,np.newaxis:,np.newaxis])
+        scaled = np.divide(norm,sel_mags[:,np.newaxis:,np.newaxis])
         
 
         total = np.sum(scaled, axis=1)
@@ -84,11 +93,12 @@ class StructOps:
         not working, due to shape mismatch. probably have to add an axis to total_count '''
         
         avg_total = total / total_count[:,np.newaxis]
-        total_mag = np.linalg.norm(avg_total, axis=1)
+        total_mag = self.mag(avg_total, axis=1)
 
         normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.zeros_like(avg_total), where=total_mag[:,np.newaxis]!=0)
 
-        return normalized_total
+        if not debug:
+            return normalized_total
 
         '''vscode unable to follow call stack when debugger invoked from venv.
         should configure remote debugging on laptop.
@@ -139,7 +149,7 @@ class StructOps:
         timings['diffs'] = last_time - start_time  
 
         last_time = time.perf_counter() 
-        mags = np.linalg.norm(diffs, axis=2)
+        mags = self.mag(diffs, axis=2)
         timings['mags'] = time.perf_counter() - last_time
         # timings['mags_perf'] = time.perf_counter()
 
@@ -161,7 +171,7 @@ class StructOps:
         timings['norms'] = time.perf_counter() - last_time
         
         last_time = time.perf_counter()
-        scaled = np.divide(norm,mags[:,np.newaxis:,np.newaxis])
+        scaled = np.divide(norm,sel_mags[:,np.newaxis:,np.newaxis])
         timings['scaled'] = time.perf_counter() - last_time
         
         last_time = time.perf_counter()
@@ -200,8 +210,101 @@ class StructOps:
         return timings
         return normalized_total
 
+    def faster_bench_dict(self, desired_sep=40): 
+        
+        '''
+        possible improvements:
+            1. replace np.linalg.norm:
+                -np.sqrt(m.dot(m))   
+                -np.sqrt(m*m))
+                -np.sqrt(np.einsum('i,i', a, a))
+                -np.sqrt(inner1d(V,V))
+
+            2. use mag^2 for mags mask against desired_sep^2
+        '''
+
+        import time
+
+        timings = {}
+
+        total = np.zeros(2) #placeholder
+        
+        start_time=time.perf_counter()
+        
+        diffs = np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
+        
+        last_time = time.perf_counter() 
+        timings['diffs'] = last_time - start_time  
+
+        last_time = time.perf_counter() 
+        # mags = np.linalg.norm(diffs, axis=2)
+        mags = self.alt_mag(diffs)
+        timings['mags'] = time.perf_counter() - last_time
+        # timings['mags_perf'] = time.perf_counter()
+
+        last_time = time.perf_counter()
+        mags_mask = ((mags<desired_sep) & (mags > 0))
+        timings['mags_mask'] = time.perf_counter() - last_time
+        
+        
+        last_time = time.perf_counter()
+        sel_mags = np.where(mags_mask, mags, np.ones(1))
+        timings['sel_mags'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        sel_diffs = np.where(mags_mask[:,np.newaxis:,np.newaxis], diffs, np.zeros(2))
+        timings['sel_diffs'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        norm = sel_diffs / sel_mags[:,np.newaxis:,np.newaxis]
+        timings['norms'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        scaled = np.divide(norm,sel_mags[:,np.newaxis:,np.newaxis])
+        timings['scaled'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total = np.sum(scaled, axis=1)
+        timings['sum_scaled'] = time.perf_counter() - last_time
+
+        last_time = time.perf_counter()
+        total_count = np.count_nonzero(mags_mask, axis=1)
+        last_time = time.perf_counter()
+        timings['count_nonzero'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total_count = np.where(total_count!=0, total_count, np.ones(1))
+        timings['total_count'] = time.perf_counter() - last_time
+        
+        '''instead of replacing zeros with ones to avoid zero div error, 
+        should use similar method as normalized total to only divide nonzero vals
+
+        "avg_total = np.divide(total, total_count, out=np.zeros_like(total), where=total_count>0)"
+        not working, due to shape mismatch. probably have to add an axis to total_count '''
+        
+        last_time = time.perf_counter()
+        avg_total = total / total_count[:,np.newaxis]
+        timings['avg_total'] = time.perf_counter() - last_time
+        
+        last_time = time.perf_counter()
+        total_mag = self.alt_mag_axis1(avg_total)
+        timings['total_mag'] = time.perf_counter() - last_time
+
+        last_time = time.perf_counter()
+        normalized_total = np.divide(avg_total,total_mag[:,np.newaxis], out=np.zeros_like(avg_total), where=total_mag[:,np.newaxis]!=0)
+        timings['normalized'] = time.perf_counter() - last_time
+
+        timings['total'] = time.perf_counter()- start_time
+
+        return timings
+
     def faster_separate(self, desired_sep=40): 
-        pass
+        def diff(): 
+            return np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
+
+        diffs = diff()
+        
+        return diffs
     def steer_to_dv(self, dv, limit=0.2): 
         maxed = dv * self.maxspeed
         steer_force = maxed - self.vlist['velocity'] 
@@ -228,5 +331,17 @@ class StructOps:
         pass
 
 
+    def scipy_neighbours(self): 
+        tree = KDTree(self.neighbours['position'])
 
+        tree.query(self.vlist['position'])
+        return tree
 
+    def standard_neighbours(self, perception_radius=100): 
+        diffs = self.vlist['position'][:,np.newaxis] - self.neighbours['position']
+        mag = self.mag(diffs, axis=2)
+
+        mag_mask = (mag < perception_radius)
+        breakpoint
+        return mag_mask
+        # self.neighbours[mag_mask]

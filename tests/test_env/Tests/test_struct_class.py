@@ -33,11 +33,14 @@ def test_alignment():
     assert np.allclose(cs_align, answer_array[1])
 
 def test_mags():
-    diffs = vops.diffs()
-
-    '''boilerplate for struct_ops diff testing, if necessary''' 
+    des_sep = 100
+    vmag = vops.sep_debug(100)['diff_mags']
+    # print(mag[0][0], alt_mag[0][0])
+    
+    '''placeholder for struct_ops diff testing, if necessary''' 
     pass
 
+test_mags()
 def standard_separation(): 
     cv = vl[0]
 
@@ -134,12 +137,12 @@ class TestAll():
 
         v_steer_sep = self.vops.steer_debug(v_sep)
         s_steer_sep = self.stops.steer_debug(s_sep)
-        breakpoint
+        
         assert_allclose(v_steer_avg, s_steer_avg)
         assert_allclose(v_steer_align, s_steer_align)
         assert_allclose(v_steer_sep, s_steer_sep)
 
-        v_vels = vops.steer(v_avg, 0, 0)
+        v_vels = vops.steer(v_avg)
 
         vl = np.load(fn, allow_pickle=True)
         stops = structure_ops.StructOps(vl)
@@ -148,6 +151,30 @@ class TestAll():
         
         assert_allclose(v_vels, s_vels)
 
-TestAll().test_steering()
-breakpoint
+# TestAll().test_steering()
+
+
+
+stops = structure_ops.StructOps(vl[:5])
+# a = stops.standard_neighbours(200)
+
+empty = np.empty_like(stops.neighbours)
+mag_mask = stops.standard_neighbours(100)
+
+empty[mag_mask] = stops.neighbours[mag_mask]
+
+stops.neighbours = empty
+
+avg = stops.avg_pos()
+stops.steer_to_dv(avg)
+
+print(stops.vlist['velocity'])
+
+# dt = [('position', '<f8', (2,)), ('acceleration', '<f8', (2,)), ('velocity', '<f8', (2,)), ('maxspeed', '<f8', (1,))]
+
+# stops.vlist['position'] - stops.neighbours['position']
+# print(stops.vlist[mag_mask])
+
+
+
 
