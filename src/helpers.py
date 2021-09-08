@@ -7,14 +7,33 @@ def genlist(n):
 
     return l
 
-def structure_vlist(vect_list):
+def structure_vlist_old(vect_list):
     data = [] 
     for vect in vect_list:
 
-        vector = (vect.position.copy(), vect.acc.copy(), vect.velocity.copy(), vect.maxspeed)
+        vector = (vect.position, vect.acc, vect.velocity, vect.maxspeed)
         data.append(vector)
     
     dt = np.dtype([('position', 'f8', (2,)), ('acceleration','f8', (2,)), ('velocity','f8', (2,)), ('maxspeed', 'f8', (1,))])
+    vector_list = np.array(data, dtype=dt)
+    
+    return vector_list
+
+def structure_vlist(num):
+    data = [] 
+    for _ in range(num):
+        
+        rng = np.random.default_rng()
+
+
+        pos = rng.integers(0,800,2)
+        acc = np.zeros(2)
+        vel = np.zeros(2)
+
+        vector = (pos, acc, vel)
+        data.append(vector)
+    
+    dt = np.dtype([('position', 'f8', (2,)), ('acceleration','f8', (2,)), ('velocity','f8', (2,))])
     vector_list = np.array(data, dtype=dt)
     
     return vector_list

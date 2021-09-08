@@ -1,4 +1,6 @@
 import numpy as np
+import numpy.ma as ma
+
 from helpers import structure_vlist
 from scipy.spatial import KDTree
 
@@ -11,11 +13,61 @@ def neighbours(vl):
     return np.array(n_list)
     
 class StructOps: 
-    def __init__(self, vlist): 
+    # def __init__(self, vlist=None): 
         
-        self.vlist = structure_vlist(vlist)
+    #     self.vlist = vlist
+    #     if vlist is not None:
+    #         self.vlist = structure_vlist(vlist)
+
+    #     self.neighbours = neighbours(self.vlist)
+    #     self.maxspeed = vlist[0].maxspeed
+
+    def __init__(self, num): 
+        
+        self.vlist = structure_vlist(num)
+
         self.neighbours = neighbours(self.vlist)
-        self.maxspeed = vlist[0].maxspeed
+        self.neighbour_distance = 50
+        self.maxspeed = 6
+
+    def recheck_neighbours(self): 
+        
+        '''will have to benchmark diag vs eye:
+        diag = np.diag(a.vlist)
+        d = a.vlist!=diag
+        n = vlist_matrix[d]
+        '''
+        vlist_matrix =np.vstack([self.vlist for i in range(self.vlist.shape[0])])
+        eye = np.eye(self.vlist.shape[0], dtype=bool)
+        invert_eye = ~eye
+        flat_neighbours = vlist_matrix[invert_eye]
+        self.neighbours = flat_neighbours.reshape(self.vlist.shape[0], self.vlist.shape[0]-1)
+
+
+    def scipy_neighbours(self): 
+        tree = KDTree(self.vlist['position'])
+        vlist_matrix =np.vstack([self.vlist['position'] for i in range(self.vlist.shape[0])])
+        mags, indices = tree.query(vlist_matrix, 5)
+
+        return indices
+
+    def initialize_vlist():
+        pass
+    
+    def nearby_neighbours(self): 
+        vlist_matrix =np.vstack([self.vlist for i in range(self.vlist.shape[0])])
+
+        diffs = self.vlist['position'][:,np.newaxis] - vlist_matrix['position']
+        mags = self.alt_mag(diffs)
+        mask = (mags < self.neighbour_distance) & (mags!=0)
+        ma_mask = ma.masked_where(~mask, vlist_matrix)
+        self.neighbours = ma_mask
+        return mask
+    
+
+
+        
+
 
     def mag(self, dv, axis): 
         return np.linalg.norm(dv, axis=axis)
@@ -27,20 +79,66 @@ class StructOps:
         return np.sqrt(np.einsum('ij,ij->i', dv, dv))
 
     def avg_pos(self):
-    
+        
+        
         avg_pos = np.sum(self.neighbours['position'], axis=1)
+        if self.neighbours.shape[1] == 0: 
+            return np.zeros(2)
+        
         avg_pos = avg_pos / self.neighbours.shape[1]
+
         dv = avg_pos - self.vlist['position']
         mag = self.mag(dv, axis=1)
 
-        if not mag.any(): 
-            return np.zeros(2)
-        
-        else: 
-            dv /= mag[:,np.newaxis]
-            return dv
-        
+        mask = mag>0
+        dv[mask] /= mag[mask][:,np.newaxis]
+
+        return dv
     
+    def avg_pos_masked(self): 
+        dv = np.zeros(2)
+        avg_pos = self.neighbours['position'].mean(axis=1).data
+        
+        if avg_pos.any():
+            dv = avg_pos - self.vlist['position']
+            mag = self.alt_mag_axis1(dv)
+
+        
+            dv/= mag[:,np.newaxis]
+
+        return dv
+
+    def steer_to_mouse(self, target): 
+        diff = target - self.vlist['position']
+        mag = self.mag(diff, axis=1)
+        
+        norm = diff/mag[:,np.newaxis]
+        
+        return norm
+        
+    def limit_speed(self, maxspeed): 
+        
+        speed_mag = np.linalg.norm(self.vlist['velocity'], axis=1)
+        speed_mask = (speed_mag > maxspeed)
+        
+        # self.vlist['velocity'][speed_mask] = self.maxspeed[:,np.newaxis]
+        over_limit = self.vlist['velocity'][speed_mask]
+        if over_limit.any():
+            
+            mag = np.linalg.norm(over_limit, axis=1)
+            # self.vlist[speed_mask] = (over_limit/mag[:,np.newaxis]) * self.maxspeed  
+            over_limit /= mag[:,np.newaxis]
+            over_limit *= maxspeed
+
+            self.vlist['velocity'][speed_mask] = over_limit
+
+
+
+        
+        
+        
+
+
     def alignment(self):
         vels = np.sum(self.neighbours['velocity'], axis=1) 
         vels /= self.neighbours.shape[1]
@@ -53,6 +151,34 @@ class StructOps:
         else:
             normalized = np.divide(vels,v_mag[:,np.newaxis])
             return normalized
+    def alignment_masked(self): 
+        vels = np.sum(self.neighbours['velocity'], axis=1) 
+        # vels = np.where(not vels.any(), vels, np.zeros(2))
+        vels /= ma.count_masked(self.neighbours['velocity'], axis=1)
+
+        v_mag = self.mag(vels, axis=1)
+        
+        normalized = np.divide(vels, v_mag[:,np.newaxis])
+        return normalized
+    def basic_sep(self, desired_sep): 
+        diffs = np.subtract(self.vlist['position'][:,np.newaxis], self.neighbours['position'])
+        mags = self.alt_mag(diffs)
+        mask = ((mags<desired_sep) & (mags > 0))
+
+        diffs[mask] /= mags[mask][:,np.newaxis]
+
+        summed = diffs[mask].sum(axis=1)
+        
+        dv = summed / np.count_nonzero(diffs[mask])
+        return dv[:,np.newaxis]
+        # return np.sum(diffs[mask], axis=1)
+
+        summed = np.sum(norm, axis=1)
+        count = np.count_nonzero(norm, axis=1)
+
+        return summed/count
+
+
 
     def separate(self, desired_sep=40, debug=False): 
         pass
@@ -305,11 +431,23 @@ class StructOps:
         diffs = diff()
         
         return diffs
+
+    def debug_average(self): 
+        avg_pos = np.sum(self.neighbours['position'], axis=1)
+        if self.neighbours.shape[1] == 0: 
+            return zeros
+        
+        avg_pos = avg_pos / self.neighbours.shape[1]
+        # print(self.neighbours.shape)
+        return avg_pos
     def steer_to_dv(self, dv, limit=0.2): 
-        maxed = dv * self.maxspeed
+        maxed = dv * 2
         steer_force = maxed - self.vlist['velocity'] 
 
         sf_mag = np.linalg.norm(steer_force, axis=1)
+        sf_mag_zmask = (sf_mag==0)
+
+        sf_mag[sf_mag_zmask] = 1
         steer_force = np.where(sf_mag[:,np.newaxis] > np.array(limit), (steer_force / sf_mag[:,np.newaxis]) * limit, steer_force)
 
         self.vlist['velocity'] += steer_force
@@ -320,22 +458,53 @@ class StructOps:
         steer_force = maxed - self.vlist['velocity'] 
 
         sf_mag = np.linalg.norm(steer_force, axis=1)
-        steer_force = np.where(sf_mag[:,np.newaxis] > np.array(limit), (steer_force / sf_mag[:,np.newaxis]) * limit, steer_force)
+        zmask = (sf_mag!=0) & (sf_mag>limit)
+
+        steer_force[zmask] /=sf_mag[zmask][:,np.newaxis]
+        steer_force[zmask] *= limit
+
+
+
+
+        return steer_force
+
+        
+        # steer_force = np.where(sf_mag[:,np.newaxis] > np.array(limit), (steer_force / sf_mag[:,np.newaxis]) * limit, steer_force)
 
         return steer_force
 
     def rotate(self): 
-        pass
+        rotations = np.arctan2(self.vlist['velocity'].T[0], self.vlist['velocity'].T[1])
+        return rotations
 
-    def limit_speed(self): 
-        pass
+    def screen_wrap(self, window_dimension): 
+        breakpoint
+
+        a = self.vlist['position'].copy()
+
+        # where = np.where(self.vlist['position'] > )
+        width,height = window_dimension
+        x_axis = self.vlist['position'][:,0]        
+        y_axis = self.vlist['position'][:,1]    
+
+        x_axis[x_axis>width] = 0
+        x_axis[x_axis< 0] = width
+
+        y_axis[y_axis >height] = 0
+        y_axis[y_axis< 0] =height
+
+        # print(self.vlist['position'][0])
+
+        # print(np.allclose(self.vlist['position'], a))
+        # self.vlist['position'] = self.vlist['position'].reshape(2, self.vlist.shape[0])
+        # over_mask = self.vlist['position'] > window_dimension
+        # under_mask = self.vlist['position'] < window_dimension
 
 
-    def scipy_neighbours(self): 
-        tree = KDTree(self.neighbours['position'])
+        # self.vlist['position'][over_mask] -= window_dimension
+        # self.vlist['position'][over_mask] -= window_dimension
+        # self.vlist['position'][under_mask] += window_dimension
 
-        tree.query(self.vlist['position'])
-        return tree
 
     def standard_neighbours(self, perception_radius=100): 
         diffs = self.vlist['position'][:,np.newaxis] - self.neighbours['position']
@@ -345,3 +514,5 @@ class StructOps:
         breakpoint
         return mag_mask
         # self.neighbours[mag_mask]
+
+breakpoint

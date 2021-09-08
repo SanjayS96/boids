@@ -163,17 +163,7 @@ mag_mask = stops.standard_neighbours(100)
 
 empty[mag_mask] = stops.neighbours[mag_mask]
 
-stops.neighbours = empty
 
-avg = stops.avg_pos()
-stops.steer_to_dv(avg)
-
-print(stops.vlist['velocity'])
-
-# dt = [('position', '<f8', (2,)), ('acceleration', '<f8', (2,)), ('velocity', '<f8', (2,)), ('maxspeed', '<f8', (1,))]
-
-# stops.vlist['position'] - stops.neighbours['position']
-# print(stops.vlist[mag_mask])
 
 
 
